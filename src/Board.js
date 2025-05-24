@@ -178,7 +178,7 @@ const Board = () => {
   // Content for each step/question (Onboarding Logic)
   const onboardingQuestions = [
     {
-      text: "Lane symbolizes the boundary between the real and the virtual: she exists in both, gradually \"dissolving\" between the worlds.",
+      text: "Lain symbolizes the boundary between the real and the virtual: she exists in both, gradually \"dissolving\" between the worlds.",
       options: [{ label: "Ok", action: handleOnboardingOkAnswer }]
     },
     {
@@ -658,7 +658,9 @@ const Board = () => {
           </style>
           <div className="onboarding-overlay">
             <div className="onboarding-content">
-              <p className="question-text blocked-message">Think it over and come back in 30 minutes.</p>
+              <p className="question-text blocked-message">Think it over and come back in 30 minutes.
+
+</p>
             </div>
           </div>
         </>
