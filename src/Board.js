@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from "react";
 import { v4 as uuidv4 } from "uuid";
 
 // Компонент для отображения изображения (remains unchanged)
-const ImageNote = ({ image, onDelete, onMouseDown, onResizeMouseDown, onLink }) => {
+const ImageNote = ({ image, onDelete, onMouseDown, onResizeMouseDown, onLink, linkColor }) => {
   return (
     <div
       onMouseDown={onMouseDown}
@@ -16,7 +16,7 @@ const ImageNote = ({ image, onDelete, onMouseDown, onResizeMouseDown, onLink }) 
         top: image.y,
         boxShadow: "0 2px 6px rgba(0,0,0,0.3)",
         userSelect: "none",
-        border: image.isLinking ? "2px solid rgb(0, 255, 255)" : "none",
+        border: image.isLinking ? `2px solid ${linkColor}` : "none",
         display: 'flex',
         flexDirection: 'column',
         justifyContent: 'space-between',
@@ -51,7 +51,7 @@ const ImageNote = ({ image, onDelete, onMouseDown, onResizeMouseDown, onLink }) 
         <button
           onClick={onLink}
           style={{
-            backgroundColor: image.isLinking ? "#0ff" : "#000",
+            backgroundColor: image.isLinking ? linkColor : "#000",
             color: "#fff",
             border: "none",
             padding: "2px 6px",
@@ -217,6 +217,8 @@ const Board = () => {
   const [offset, setOffset] = useState({ x: 0, y: 0 });
   const [linkingFrom, setLinkingFrom] = useState(null);
   const [links, setLinks] = useState([]);
+  // New state for link color
+  const [linkColor, setLinkColor] = useState("#00FFFF"); // Default cyan color
 
   // New states for session management
   const [currentSessionName, setCurrentSessionName] = useState("Default Session");
@@ -248,6 +250,7 @@ const Board = () => {
       links,
       scale,
       offset,
+      linkColor, // Save link color
     };
     try {
       localStorage.setItem(`board_session_${currentSessionName}`, JSON.stringify(sessionData));
@@ -269,6 +272,7 @@ const Board = () => {
         setLinks(sessionData.links || []);
         setScale(sessionData.scale || 1);
         setOffset(sessionData.offset || { x: 0, y: 0 });
+        setLinkColor(sessionData.linkColor || "#00FFFF"); // Load link color
         setCurrentSessionName(name);
         alert(`Session "${name}" loaded successfully!`);
       } else {
@@ -278,6 +282,7 @@ const Board = () => {
         setLinks([]);
         setScale(1);
         setOffset({ x: 0, y: 0 });
+        setLinkColor("#00FFFF"); // Reset to default if session not found
         setCurrentSessionName(name);
       }
     } catch (e) {
@@ -288,6 +293,7 @@ const Board = () => {
       setLinks([]);
       setScale(1);
       setOffset({ x: 0, y: 0 });
+      setLinkColor("#00FFFF"); // Reset to default on error
     } finally {
       setLinkingFrom(null);
       setShowSessionModal(false);
@@ -324,6 +330,7 @@ const Board = () => {
     setScale(1);
     setOffset({ x: 0, y: 0 });
     setLinkingFrom(null);
+    setLinkColor("#00FFFF"); // Reset link color for new session
     setCurrentSessionName(name || "Untitled Session");
     setShowSessionModal(false);
   };
@@ -344,7 +351,6 @@ const Board = () => {
       setShowOnboarding(true); // Show onboarding again
     }
   };
-
 
   // --- Other Board Functions (Card, Image, Pan, Zoom, Link) ---
   const handleAddCard = () => {
@@ -914,6 +920,22 @@ const Board = () => {
         >
           Reset
         </button>
+        {/* New button for changing link color */}
+        <input
+          type="color"
+          value={linkColor}
+          onChange={(e) => setLinkColor(e.target.value)}
+          style={{
+            width: "40px",
+            height: "36px",
+            padding: "0",
+            border: "none",
+            borderRadius: 4,
+            cursor: "pointer",
+            backgroundColor: "transparent",
+          }}
+          title="Change Link Color"
+        />
       </div>
 
       {/* Текущее имя сеанса */}
@@ -932,65 +954,74 @@ const Board = () => {
       {onboardingUserName && (
         <div style={{
           position: "absolute",
-          top: 10,
-          right: 10,
+          top: 35, // Below Current Session
+          left: 10,
           zIndex: 1000,
           color: "#fff",
           fontSize: 14,
-          backgroundColor: '#333',
-          padding: '5px 10px',
-          borderRadius: '5px'
         }}>
-          Hello, {onboardingUserName}!
+          Hi, {onboardingUserName}!
         </div>
       )}
 
-      {/* Линии связей */}
-      <svg
-        style={{
-          position: "absolute",
+      {/* Session Modal */}
+      {showSessionModal && (
+        <div style={{
+          position: "fixed",
           top: 0,
           left: 0,
           width: "100%",
           height: "100%",
-          pointerEvents: "none",
-          overflow: "visible",
-          zIndex: 500,
-        }}
-      >
-        {links.map(({ from, to }, i) => {
-          const fromElement = cards.find(c => c.id === from) || images.find(img => img.id === from);
-          const toElement = cards.find(c => c.id === to) || images.find(img => img.id === to);
+          backgroundColor: "rgba(0, 0, 0, 0.82)",
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          zIndex: 2000,
+        }}>
+          <div style={{
+            backgroundColor: "#0a0a0a",
+            padding: "20px",
+            borderRadius: "8px",
+            color: "#fff",
+            width: "300px",
+            maxHeight: "80vh",
+            overflowY: "auto",
+            display: "flex",
+            flexDirection: "column",
+            gap: "15px",
+          }}>
+            <h3>Manage Sessions</h3>
+            <div style={{ display: "flex", gap: "10px" }}>
+              <input
+                type="text"
+                value={sessionInput}
+                onChange={(e) => setSessionInput(e.target.value)}
+                placeholder="Session Name"
+                style={{ flexGrow: 1, padding: "8px", borderRadius: "4px", border: "1px solid #444", backgroundColor: "#333", color: "#fff" }}
+              />
+              <button onClick={() => { setCurrentSessionName(sessionInput); saveSession(); setSessionInput(""); }} style={{ backgroundColor: "#1f0404", color: "#fff", border: "none", padding: "8px 12px", borderRadius: "4px", cursor: "pointer" }}>Save</button>
+            </div>
+            <button onClick={() => handleNewSession()} style={{ backgroundColor: "#1f0404", color: "#fff", border: "none", padding: "8px 12px", borderRadius: "4px", cursor: "pointer" }}>New Session</button>
 
-          if (!fromElement || !toElement) return null;
+            <h4>Available Sessions:</h4>
+            {availableSessions.length === 0 ? (
+              <p>No sessions saved.</p>
+            ) : (
+              <ul style={{ listStyle: "none", padding: 0 }}>
+                {availableSessions.map((name) => (
+                  <li key={name} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px", background: "#333", padding: "8px", borderRadius: "4px" }}>
+                    <span style={{ cursor: "pointer", flexGrow: 1 }} onClick={() => loadSession(name)}>{name}</span>
+                    <button onClick={() => loadSession(name)} style={{ backgroundColor: "#1a1a1a", color: "#fff", border: "none", padding: "5px 10px", borderRadius: "4px", cursor: "pointer", marginRight: "5px" }}>Load</button>
+                    <button onClick={() => deleteSession(name)} style={{ backgroundColor: "#1a1a1a", color: "#fff", border: "none", padding: "5px 10px", borderRadius: "4px", cursor: "pointer" }}>Delete</button>
+                  </li>
+                ))}
+              </ul>
+            )}
+            <button onClick={() => setShowSessionModal(false)} style={{ backgroundColor: "#0f0f0f", color: "#fff", border: "none", padding: "8px 12px", borderRadius: "4px", cursor: "pointer" }}>Close</button>
+          </div>
+        </div>
+      )}
 
-          const { point1: fromPoint, point2: toPoint } = getEdgeConnectionPoint(fromElement, toElement);
-
-          if (!fromPoint || !toPoint) return null;
-
-          return (
-            <line
-              key={i}
-              x1={fromPoint.x * scale + offset.x}
-              y1={fromPoint.y * scale + offset.y}
-              x2={toPoint.x * scale + offset.x}
-              y2={toPoint.y * scale + offset.y}
-              stroke="#0ff"
-              strokeWidth="2"
-              markerEnd="url(#arrowhead)"
-            />
-          );
-        })}
-        {/* Определение стрелки для маркера */}
-        <defs>
-          <marker id="arrowhead" markerWidth="10" markerHeight="7"
-            refX="0" refY="3.5" orient="auto">
-            <polygon points="0 0, 10 3.5, 0 7" fill="#0ff" />
-          </marker>
-        </defs>
-      </svg>
-
-      {/* Элементы доски */}
       <div
         style={{
           transform: `translate(${offset.x}px, ${offset.y}px) scale(${scale})`,
@@ -1006,18 +1037,20 @@ const Board = () => {
             onMouseDown={(e) => handleElementMouseDown(e, card.id, 'card')}
             style={{
               position: "absolute",
-              left: card.x,
-              top: card.y,
               width: card.width,
               height: card.height,
               backgroundColor: "#292929",
               padding: 10,
               borderRadius: 6,
+              left: card.x,
+              top: card.y,
               boxShadow: "0 2px 6px rgba(0,0,0,0.3)",
-              display: "flex",
-              flexDirection: "column",
-              justifyContent: "space-between",
-              border: card.isLinking ? "2px solid rgb(0, 255, 255)" : "none",
+              userSelect: "none",
+              border: card.isLinking ? `2px solid ${linkColor}` : "none",
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'space-between',
+              alignItems: 'center',
             }}
           >
             <textarea
@@ -1025,7 +1058,7 @@ const Board = () => {
               onChange={(e) => handleCardChange(card.id, e.target.value)}
               style={{
                 width: "100%",
-                flexGrow: 1,
+                height: "calc(100% - 25px)",
                 border: "none",
                 backgroundColor: "transparent",
                 color: "#fff",
@@ -1035,7 +1068,7 @@ const Board = () => {
                 fontSize: 14,
               }}
             />
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 5 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", width: '100%', marginTop: 5 }}>
               <button
                 onClick={() => deleteCard(card.id)}
                 style={{
@@ -1052,7 +1085,7 @@ const Board = () => {
               <button
                 onClick={() => handleLinkElement(card.id)}
                 style={{
-                  backgroundColor: card.isLinking ? "#0ff" : "#000",
+                  backgroundColor: card.isLinking ? linkColor : "#000",
                   color: "#fff",
                   border: "none",
                   padding: "2px 6px",
@@ -1083,140 +1116,54 @@ const Board = () => {
             onMouseDown={(e) => handleElementMouseDown(e, image.id, 'image')}
             onResizeMouseDown={(e) => handleElementResizeMouseDown(e, image.id, 'image')}
             onLink={() => handleLinkElement(image.id)}
+            linkColor={linkColor} // Pass linkColor to ImageNote
           />
         ))}
+
+        <svg
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            width: "100%",
+            height: "100%",
+            pointerEvents: "none",
+          }}
+        >
+          {links.map((link, index) => {
+            const fromElement = cards.find(c => c.id === link.from) || images.find(img => img.id === link.from);
+            const toElement = cards.find(c => c.id === link.to) || images.find(img => img.id === link.to);
+
+            if (!fromElement || !toElement) return null;
+
+            const { point1, point2 } = getEdgeConnectionPoint(fromElement, toElement);
+
+            if (!point1 || !point2) return null;
+
+            const arrowSize = 8;
+            const angle = Math.atan2(point2.y - point1.y, point2.x - point1.x);
+
+            return (
+              <g key={index}>
+                <line
+                  x1={point1.x}
+                  y1={point1.y}
+                  x2={point2.x}
+                  y2={point2.y}
+                  stroke={linkColor} // Use linkColor for the line
+                  strokeWidth="2"
+                />
+                <polygon
+                  points={`${point2.x},${point2.y} 
+                           ${point2.x - arrowSize * Math.cos(angle - Math.PI / 6)},${point2.y - arrowSize * Math.sin(angle - Math.PI / 6)} 
+                           ${point2.x - arrowSize * Math.cos(angle + Math.PI / 6)},${point2.y - arrowSize * Math.sin(angle + Math.PI / 6)}`}
+                  fill={linkColor} // Use linkColor for the arrow head
+                />
+              </g>
+            );
+          })}
+        </svg>
       </div>
-
-      {/* Модальное окно для управления сессиями */}
-      {showSessionModal && (
-        <div style={{
-          position: "fixed",
-          top: 0,
-          left: 0,
-          width: "100%",
-          height: "100%",
-          backgroundColor: "rgba(0, 0, 0, 0.73)",
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          zIndex: 2000,
-        }}>
-          <div style={{
-            backgroundColor: "#222",
-            padding: 20,
-            borderRadius: 8,
-            color: "#fff",
-            width: 400,
-            maxHeight: "80vh",
-            overflowY: "auto",
-            display: "flex",
-            flexDirection: "column",
-            gap: 15,
-          }}>
-            <h2 style={{ margin: 0, borderBottom: "1px solid #444", paddingBottom: 10 }}>Manage Sessions</h2>
-
-            <div style={{ display: "flex", gap: 10 }}>
-              <input
-                type="text"
-                value={sessionInput}
-                onChange={(e) => setSessionInput(e.target.value)}
-                placeholder="Enter session name"
-                style={{ flexGrow: 1, padding: 8, borderRadius: 4, border: "1px solid #555", backgroundColor: "#333", color: "#fff" }}
-              />
-              <button
-                onClick={saveSession}
-                style={{
-                  backgroundColor: "#000000",
-                  color: "#fff",
-                  border: "none",
-                  padding: "8px 12px",
-                  borderRadius: 4,
-                  cursor: "pointer",
-                }}
-              >
-                Save Current
-              </button>
-            </div>
-
-            <button
-              onClick={() => handleNewSession()}
-              style={{
-                backgroundColor: "#000000",
-                color: "#fff",
-                border: "none",
-                padding: "8px 12px",
-                borderRadius: 4,
-                cursor: "pointer",
-              }}
-            >
-              Create New Session
-            </button>
-
-            <h3 style={{ margin: "10px 0 5px 0", borderBottom: "1px solid #444", paddingBottom: 5 }}>Available Sessions:</h3>
-            <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
-              {availableSessions.length === 0 && <li style={{ color: "#aaa" }}>No saved sessions.</li>}
-              {availableSessions.map((sessionName) => (
-                <li key={sessionName} style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  padding: "8px 0",
-                  borderBottom: "1px dashed #333",
-                }}>
-                  <span style={{ flexGrow: 1, cursor: "pointer" }} onClick={() => loadSession(sessionName)}>
-                    {sessionName === currentSessionName ? `* ${sessionName}` : sessionName}
-                  </span>
-                  <div style={{ display: "flex", gap: 5 }}>
-                    <button
-                      onClick={() => loadSession(sessionName)}
-                      style={{
-                        backgroundColor: "#000000",
-                        color: "#fff",
-                        border: "none",
-                        padding: "5px 10px",
-                        borderRadius: 4,
-                        cursor: "pointer",
-                        fontSize: 12,
-                      }}
-                    >
-                      Load
-                    </button>
-                    <button
-                      onClick={() => deleteSession(sessionName)}
-                      style={{
-                        backgroundColor: "#000000",
-                        color: "#fff",
-                        border: "none",
-                        padding: "5px 10px",
-                        borderRadius: 4,
-                        cursor: "pointer",
-                        fontSize: 12,
-                      }}
-                    >
-                      Delete
-                    </button>
-                  </div>
-                </li>
-              ))}
-            </ul>
-
-            <button
-              onClick={() => setShowSessionModal(false)}
-              style={{
-                backgroundColor: "#000000",
-                color: "#fff",
-                border: "none",
-                padding: "10px 15px",
-                borderRadius: 4,
-                cursor: "pointer",
-                marginTop: 20,
-              }}
-            >
-              Close
-            </button>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
