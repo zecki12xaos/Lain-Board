@@ -182,7 +182,7 @@ const Board = () => {
       options: [{ label: "Ok", action: handleOnboardingOkAnswer }]
     },
     {
-      text: "The Wired is a separate world that should be free; the Knights seek independence by using Lain as software — but Lain is God herself.",
+      text: "The Wired is a world that is merging with the real, making the two worlds one and the same. Lain is God herself; she is everywhere and watches over everyone.",
       options: [{ label: "Ok", action: handleOnboardingOkAnswer }]
     },
     {
@@ -190,7 +190,7 @@ const Board = () => {
       options: [{ label: "Ok", action: handleOnboardingOkAnswer }]
     },
     {
-      text: "Everything must be connected.",
+      text: "The main goal of the Knights is the unity of information and its truthfulness.",
       options: [{ label: "Ok", action: handleOnboardingOkAnswer }]
     },
     {
